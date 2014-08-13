@@ -286,9 +286,13 @@ def register():
 	if not password:
 		errors['password'] = 'Password is required.'
 
+	if email and User.find_by_email(email):
+		errors['email'] = "Email has already been registered.  Please enter a new email."
+
 	if errors:
 		return jsonify({'errors':errors}),400
 
+	
 	user = User.create(email, password)
 
 	user_data = {
@@ -300,6 +304,34 @@ def register():
 
 	return jsonify(user_data)
 
+
+"""
+Some code I couldnt keep up with...
+@app.route('/api/v1/songs/<int:song_id>', methods=['POST'])
+@app_token_required
+
+def sonf(song_id):
+	song = Song.get(song_id)
+	is_favorited = None
+
+	if not song:
+		return jsonify({'errors': 'Song not found'}),400
+
+	if request.method == "PUT":
+		data = request.get_json() or {}
+		data_song = data.get('song') or {}
+		favorite = data_song.get('favorite')
+
+	if favorite is not None:
+		is_favorited = song.set_favorite()
+
+	if is_favorited is None:
+		is_favorited = song.is_favorited(g)
+	
+	else: 
+		song = Song.get
+
+"""
 
 if __name__ == '__main__':
 	#added debug to allow stack trace
