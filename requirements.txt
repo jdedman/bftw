@@ -6,6 +6,7 @@ PyJWT==0.2.1
 SQLAlchemy==0.9.7
 Werkzeug==0.9.6
 argparse==1.2.1
+django-dotenv==1.2
 itsdangerous==0.24
 passlib==1.6.2
 wsgiref==0.1.2

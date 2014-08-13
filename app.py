@@ -1,9 +1,17 @@
-from flask import Flask, jsonify
+import os
+from flask import Flask, jsonify, request
 from flask.ext.sqlalchemy import SQLAlchemy
 import jwt
+import dotenv
 from passlib.context import CryptContext
 
+dotenv.read_dotenv()
+
 app = Flask (__name__)
+
+# Config
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
+
 
 # Initialize Database
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///soundem.db'
@@ -227,14 +235,72 @@ class Favorite(db.Model):
 
 
 
-@app.route('/')
-def hello():
+@app.route('/api/v1/artists', methods=['GET'])
+def get_artists():
+	artists = Artist.get_all()
+	results =[]
+
+	for artist in artists:
+		results.append({
+				'id': artist.id,
+				'name': artist.name,
+				'bio': artist.bio,
+				#the following line is an example of list comprehension, replaces a more verbose for loop
+				'albums': [album.id for album in artist.albums.all()]
+			})
+
+	return jsonify({'artists': results})
+
+
+@app.route('/api/v1/artists/<int:artist_id>', methods=['GET'])
+def get_artist(artist_id):
+
+	artist = Artist.get(artist_id)
+
+	if not artist:
+		return jsonify({
+				'error': 'Artist not found'
+			}), 404
+		
 	data = {
-		'id': 1,
-		'name' : 'Mi Cancion'
+				'id': artist.id,
+				'name': artist.name,
+				'bio': artist.bio,
+				#the following line is an example of list comprehension, replaces a more verbose for loop
+				'albums': [album.id for album in artist.albums.all()]
+
 	}
 
-	return jsonify(data)
+	return jsonify({'artist': data})
+
+@app.route('/api/v1/register', methods=['POST'])
+def register():
+	data = request.get_json()
+	email =data.get('email')
+	password = data.get('password')
+	errors = {}
+
+	if not email:
+		errors['email'] = 'Email is required.'
+
+	if not password:
+		errors['password'] = 'Password is required.'
+
+	if errors:
+		return jsonify({'errors':errors}),400
+
+	user = User.create(email, password)
+
+	user_data = {
+		'id': user.id,
+		'email': user.email,
+		'token': user.get_auth_token()
+
+	}
+
+	return jsonify(user_data)
+
 
 if __name__ == '__main__':
-	app.run(host='0.0.0.0')
+	#added debug to allow stack trace
+	app.run(host='0.0.0.0', debug=True)
